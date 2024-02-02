@@ -1,7 +1,11 @@
 'use client'
-import React, {MouseEventHandler, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
+import Form from "./Form";
+import handleDelete from "../lib/handleDelete";
+import handleSave from "../lib/handleSave";
+import handleAdd from "../lib/handleAdd";
 
-interface Media {
+export interface Media {
     id: number;
     title: string;
     type: string;
@@ -21,85 +25,15 @@ const MediaList = () => {
         releaseYear: 0,
         rating: 0,
     });
-
-    const handleDelete = async (id: number) => {
-        try {
-            const response = await fetch('/api/media', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id }),
-            });
-
-            if (response.ok) {
-                setMedia(media.filter((item) => item.id !== id));
-            } else {
-                console.error('Failed to delete the item.');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    };
-
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const handleAddMediaModal = () => {
+        setIsModalOpen(true);
+    }
+    console.log('editedItem', editedItem)
     const handleEdit = (item: Media) => {
         setEditingId(item.id);
         setEditedItem(item);
     }
-    const handleAdd = async () => {
-        try {
-            const response = await fetch('/api/media', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                        title: 'New Media',
-                        type: 'Movie',
-                        genre: 'Action',
-                        releaseYear: 2021,
-                        rating: 5,
-
-              }),
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setMedia([...media, data]);
-            } else {
-                console.error('Failed to add the item.');
-            }
-
-        } catch (
-
-            error)
-        {
-            console.error('Error:', error);
-        }
-    }
-
-    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
-        console.log('handleSave,', editedItem)
-        e.preventDefault();
-        try {
-            const response = await fetch('/api/media', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(editedItem),
-            });
-
-            if (response.ok) {
-                setMedia(media.map((item) => (item.id === editedItem.id ? editedItem : item)));
-                setEditingId(null);
-            } else {
-                console.error('Failed to update the item.');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    }
-
     useEffect(() => {
         fetch('/api/media')
             .then((response) => response.json())
@@ -108,79 +42,85 @@ const MediaList = () => {
     return (
         <div>
             <div className="flex justify-evenly mb-4">
-                <button className="py-3 p-3 px-3 bg-amber-200" onClick={handleAdd}>Add Media</button>
+                <button className="py-3 p-3 px-3 bg-blue-100 text-blue-950 font-bold rounded-2xl" onClick={handleAddMediaModal}>Add Media</button>
             </div>
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+                    <div className="bg-gray-400 p-6 rounded-lg shadow-lg">
+                        <form onSubmit={(e) => handleSave(e, setMedia, media, editedItem, setEditingId)} className="flex flex-col space-y-2">                            <div>
+                                <label htmlFor="title" className="text-gray-700 m-2 mb-4">Title</label>
+                                <input type="text"
+                                       style={{color: '#4a5568', fontSize: '1rem',}}
+                                       value={editedItem.title} onChange={(e) => setEditedItem({...editedItem, title: e.target.value})} className="border border-gray-300 p-2 w-full" />
+                            </div>
+                            <div>
+                                <label htmlFor="type" className="text-gray-700 m-2 mb-4">Type</label>
+                                <input
+                                    style={{color: '#4a5568', fontSize: '1rem',}}
+                                    type="text" value={editedItem.type} onChange={(e) => setEditedItem({...editedItem, type: e.target.value})} className="border border-gray-300 p-2 w-full" />
+                            </div>
+                            <div>
+                                <label htmlFor="genre" className="text-gray-700 m-2 mb-4">Genre</label>
+                                <input
+                                    style={{
+                                        color: '#4a5568',
+                                        fontSize: '1rem',
+                                    }}
+                                    type="text" value={editedItem.genre} onChange={(e) => setEditedItem({...editedItem, genre: e.target.value})} className="border border-gray-300 p-2 w-full" />
+                            </div>
+                            <div>
+                                <label htmlFor="releaseYear" className="text-gray-700 m-2 mb-4">Release Year</label>
+                                <input
+                                    style={{
+                                        color: '#4a5568',
+                                        fontSize: '1rem',
+                                    }}
+                                    type="text" value={editedItem.releaseYear} onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d*$/.test(value)) {
+                                    setEditedItem({...editedItem, releaseYear: Number(e.target.value)})
+                                    }
+                                }
+
+                                } className="border border-gray-300 p-2 w-full" />
+                            </div>
+                            <div>
+                                <label htmlFor="rating" className="text-gray-700 m-2 mb-4">Rating</label>
+                                <input
+                                    style={{
+                                        color: '#4a5568',
+                                        fontSize: '1rem',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'textfield'
+                                    }}
+                                    type="text" value={editedItem.rating} onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d*$/.test(value)) {
+                                    setEditedItem({...editedItem, rating: Number(e.target.value)})
+                                    }}
+                                }
+                                    className="border border-gray-300 p-2 w-full" />
+                            </div>
+                            <div className="flex justify-between space-x-2">
+                                <button type="button" onClick={()=>{
+                                    handleAdd(setMedia, media, editedItem, setEditedItem)
+                                    setIsModalOpen(false)
+                                }} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
+                                <button type="button" onClick={() => {
+                                    setIsModalOpen(false)
+                                    setEditingId(null)
+                                }} className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-wrap -mx-1 lg:-mx-4">
                 {media.map((item) => (
                     <div key={item.id} className="my-1 px-1 w-1/8 h-1/3 lg:my-4 lg:px-4 lg:w-1/8">
                         <article className="overflow-hidden rounded-2xl shadow-lg bg-gray-100 p-4">
-                            {editingId === item.id ? (<>
-                                    <form onSubmit={handleSave} className="flex flex-col space-y-2">
-                                        <div>
-                                            <input type="text"
-                                                   style={{
-                                                       backgroundColor: 'transparent',
-                                                       border: 'none',
-                                                       padding: 0,
-                                                       margin: 0,
-                                                       color: '#4a5568',
-                                                       fontSize: '1rem',
-                                                   }}
-                                                   value={editedItem.title} onChange={(e) => setEditedItem({...editedItem, title: e.target.value})} className="border border-gray-300 p-2 w-full" />
-                                        </div>
-                                        <div>
-                                            <input
-                                                style={{
-                                                    backgroundColor: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                    margin: 0,
-                                                    color: '#4a5568',
-                                                    fontSize: '1rem',
-                                                }}                                                type="text" value={editedItem.type} onChange={(e) => setEditedItem({...editedItem, type: e.target.value})} className="border border-gray-300 p-2 w-full" />
-                                        </div>
-                                        <div>
-                                            <input
-                                                            style={{
-                                                       backgroundColor: 'transparent',
-                                                       border: 'none',
-                                                       padding: 0,
-                                                       margin: 0,
-                                                       color: '#4a5568',
-                                                       fontSize: '1rem',
-                                                   }}
-                                                type="text" value={editedItem.genre} onChange={(e) => setEditedItem({...editedItem, genre: e.target.value})} className="border border-gray-300 p-2 w-full" />
-                                        </div>
-                                        <div>
-                                            <input
-                                                            style={{
-                                                       backgroundColor: 'transparent',
-                                                       border: 'none',
-                                                       padding: 0,
-                                                       margin: 0,
-                                                       color: '#4a5568',
-                                                       fontSize: '1rem',
-                                                   }}
-                                                type="text" value={editedItem.releaseYear} onChange={(e) => setEditedItem({...editedItem, releaseYear: Number(e.target.value)})} className="border border-gray-300 p-2 w-full" />
-                                        </div>
-                                        <div>
-                                            <input
-                                                            style={{
-                                                       backgroundColor: 'transparent',
-                                                       border: 'none',
-                                                       padding: 0,
-                                                       margin: 0,
-                                                       color: '#4a5568',
-                                                       fontSize: '1rem',
-                                                   }}
-                                                type="text" value={editedItem.rating} onChange={(e) => setEditedItem({...editedItem, rating: Number(e.target.value)})} className="border border-gray-300 p-2 w-full" />
-                                        </div>
-                                        <div className="flex justify-between space-x-2">
-                                            <button type="button" onClick={handleSave as any} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
-                                            <button type="button" onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Cancel</button>
-                                        </div>
-                                    </form>
-
+                            {editingId && editingId === item.id ? (<>
+                            <Form editedItem={editedItem} setEditedItem={setEditedItem} handleSave={handleSave} setEditingId={setEditingId} />
                                 </>) :
                                 ( <>
                                     <h3 className="text-gray-700 text-xl">{item.title}</h3>
@@ -188,19 +128,17 @@ const MediaList = () => {
                                     <p className="text-gray-600">Genre: {item.genre}</p>
                                     <p className="text-gray-600">Release Year: {item.releaseYear}</p>
                                     <p className="text-gray-600">Rating: {item.rating}</p>
+
+                                    <button className="mt-4 bg-teal-700 hover:bg-green-600 text-white font-bold py-2 px-4 rounded m-2"
+                                            onClick={() => handleEdit(item)}>Edit
+                                    </button>
                                     <button
-                                        onClick={() => handleDelete(item.id)}
-                                        className="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => handleDelete(item.id, setMedia,media)}
+                                        className="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded m-2"
                                     >
                                         Delete
                                     </button>
-                                    <button className="mt-4 bg-teal-700 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-                                            onClick={() => handleEdit(item)}>Edit
-                                    </button>
                                 </>)}
-
-
-
                         </article>
                     </div>
                 ))}

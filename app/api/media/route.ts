@@ -32,20 +32,20 @@ let mediaList:Media[] = [
 
 
 export async function GET(request: NextRequest) {
-    // Optionally, handle retrieval of a single item based on id
     const id = request.nextUrl.searchParams.get('id');
     if (id) {
         const mediaItem = mediaList.find((item) => item.id === parseInt(id, 10));
         return NextResponse.json(mediaItem || {});
     }
 
-    // Return the full list
     return NextResponse.json({ mediaList });
 }
 
 export async function POST(request: NextRequest) {
-    const newMedia = await request.json();
-    mediaList.push({ ...newMedia, id: Date.now() }); // Using timestamp as a mock ID
+    const response = await request.json();
+    const newMedia = {...response.editedItem, id: Date.now()};
+    mediaList.push({ ...newMedia});
+    console.log('mediaList', mediaList)
     return NextResponse.json({ added: newMedia }, { status: 201 });
 }
 
