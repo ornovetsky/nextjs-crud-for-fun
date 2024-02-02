@@ -10,8 +10,6 @@ interface Media {
     rating: number;
 }
 
-
-
 const MediaList = () => {
     const [media, setMedia] = useState<Media[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -47,7 +45,36 @@ const MediaList = () => {
     const handleEdit = (item: Media) => {
         setEditingId(item.id);
         setEditedItem(item);
-        console.log('item', item.id)
+    }
+    const handleAdd = async () => {
+        try {
+            const response = await fetch('/api/media', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                        title: 'New Media',
+                        type: 'Movie',
+                        genre: 'Action',
+                        releaseYear: 2021,
+                        rating: 5,
+
+              }),
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setMedia([...media, data]);
+            } else {
+                console.error('Failed to add the item.');
+            }
+
+        } catch (
+
+            error)
+        {
+            console.error('Error:', error);
+        }
     }
 
     const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -80,6 +107,9 @@ const MediaList = () => {
     }, []);
     return (
         <div>
+            <div className="flex justify-evenly mb-4">
+                <button className="py-3 p-3 px-3 bg-amber-200" onClick={handleAdd}>Add Media</button>
+            </div>
             <div className="flex flex-wrap -mx-1 lg:-mx-4">
                 {media.map((item) => (
                     <div key={item.id} className="my-1 px-1 w-1/8 h-1/3 lg:my-4 lg:px-4 lg:w-1/8">
