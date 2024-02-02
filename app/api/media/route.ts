@@ -1,3 +1,4 @@
+import {NextRequest, NextResponse} from "next/server";
 
 type MediaType = 'movie' | 'tv-show' | 'game' | string;
 
@@ -10,7 +11,7 @@ interface Media {
     rating: number;
 }
 
-const mediaList = [
+let mediaList:Media[] = [
     { id: 1, title: 'Inception', type: 'movie', genre: 'Sci-Fi', releaseYear: 2010, rating: 9 },
     { id: 2, title: 'Breaking Bad', type: 'tv-show', genre: 'Drama', releaseYear: 2008, rating: 10 },
     { id: 3, title: 'The Witcher 3', type: 'game', genre: 'RPG', releaseYear: 2015, rating: 9.5 },
@@ -29,6 +30,33 @@ const mediaList = [
 ];
 
 
-export async function GET() {
-    return Response.json({ mediaList })
+
+export async function GET(request: NextRequest) {
+    // Optionally, handle retrieval of a single item based on id
+    const id = request.nextUrl.searchParams.get('id');
+    if (id) {
+        const mediaItem = mediaList.find((item) => item.id === parseInt(id, 10));
+        return NextResponse.json(mediaItem || {});
+    }
+
+    // Return the full list
+    return NextResponse.json({ mediaList });
+}
+
+export async function POST(request: NextRequest) {
+    const newMedia = await request.json();
+    mediaList.push({ ...newMedia, id: Date.now() }); // Using timestamp as a mock ID
+    return NextResponse.json({ added: newMedia }, { status: 201 });
+}
+
+export async function PUT(request: NextRequest) {
+    const updateMedia = await request.json();
+    mediaList = mediaList.map((item) => (item.id === updateMedia.id ? updateMedia : item));
+    return NextResponse.json({ updated: updateMedia });
+}
+
+export async function DELETE(request: NextRequest) {
+    const { id } = await request.json();
+    mediaList = mediaList.filter((item) => item.id !== id);
+    return NextResponse.json({ deletedId: id });
 }
